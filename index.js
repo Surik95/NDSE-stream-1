@@ -4,10 +4,12 @@ const readline = require('node:readline');
 const { stdin: input, stdout: output } = require('node:process');
 const fs = require('fs');
 const rl = readline.createInterface({ input, output });
+const path = require('path');
 
 class GameHeadsTails {
   constructor(process) {
     this.path = process.argv[2];
+    this.directStat = path.parse(__filename).dir;
   }
 
   init() {
@@ -15,6 +17,7 @@ class GameHeadsTails {
       this.startGame();
     } else {
       console.log('Укажите название файла со статистикой в параметре');
+      rl.close();
     }
   }
 
@@ -27,11 +30,9 @@ class GameHeadsTails {
 
   makeNumber() {
     this.number = Math.round(Math.random() * 1 + 1);
-    console.log(this.number);
   }
 
   iteratingValues(data) {
-    console.log(data);
     if (Number(data) === this.number) {
       console.log('Вы выиграли');
       this.logFile('win');
@@ -67,29 +68,41 @@ class GameHeadsTails {
 
   logFile(indicator) {
     try {
-      if (fs.existsSync(`./${this.path}.txt`)) {
-        fs.readFile(`${this.path}.txt`, 'utf8', (error, data) => {
-          if (error) throw error;
-          const stat = JSON.parse(data);
-          if (indicator === 'win') {
-            stat.win += 1;
-          } else {
-            stat.loses += 1;
+      if (fs.existsSync(`${this.directStat}//${this.path}.txt`)) {
+        fs.readFile(
+          `${this.directStat}//${this.path}.txt`,
+          'utf8',
+          (error, data) => {
+            if (error) throw error;
+            const stat = JSON.parse(data);
+            if (indicator === 'win') {
+              stat.win += 1;
+            } else {
+              stat.loses += 1;
+            }
+            stat.game += 1;
+            fs.writeFile(
+              `${this.directStat}//${this.path}.txt`,
+              JSON.stringify(stat),
+              (error) => {
+                if (error) throw error; // если возникла ошибка
+              }
+            );
           }
-          stat.game += 1;
-          fs.writeFile(`${this.path}.txt`, JSON.stringify(stat), (error) => {
-            if (error) throw error; // если возникла ошибка
-          });
-        });
+        );
       } else {
         const stat = {
           game: 0,
           win: 0,
           loses: 0,
         };
-        fs.writeFile(`${this.path}.txt`, JSON.stringify(stat), (error) => {
-          if (error) throw error; // если возникла ошибка
-        });
+        fs.writeFile(
+          `${this.directStat}//${this.path}.txt`,
+          JSON.stringify(stat),
+          (error) => {
+            if (error) throw error; // если возникла ошибка
+          }
+        );
         this.logFile(indicator);
       }
     } catch (err) {
